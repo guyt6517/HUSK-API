@@ -7,7 +7,7 @@ app = Flask(__name__)
 db = set()
 
 # Get login token from environment variable
-LOGIN_TOKEN = os.getenv("LOGIN_TOKEN", "default_token_if_not_set")
+LOGIN_TOKEN = os.getenv("LOGIN_TOKEN", "")
 
 @app.route("/FileCheckUpdate", methods=["POST"])
 def check():
