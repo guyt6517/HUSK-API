@@ -1,8 +1,11 @@
 import os
 from flask import Flask, jsonify, request, abort, render_template_string, session
 import random
+from flask_cors import CORS
 
 app = Flask(__name__)
+
+CORS(app)
 
 DB_FILE = "db.txt"
 
