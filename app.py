@@ -104,6 +104,11 @@ ADMIN_PAGE_HTML = """
 </body>
 </html>
 """
+@app.route("/GetCurrentDB", methods=["GET"])
+def passDB():
+    with open("db.txt", "r") as o:
+        db = o.read()
+    return Response(db, mimetype="text/plain")
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
