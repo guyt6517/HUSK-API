@@ -1,11 +1,13 @@
 import os
 from flask import Flask, jsonify, request, abort, render_template_string, session
 
-app.secret_key = os.getenv("LOGIN_TOKEN", "")  # You should set a secure key
+
 
 app = Flask(__name__)
 
 DB_FILE = "db.txt"
+
+app.secret_key = os.getenv("LOGIN_TOKEN", "")  # You should set a secure key
 
 # Get login token from environment variable
 LOGIN_TOKEN = os.getenv("LOGIN_TOKEN", "")
