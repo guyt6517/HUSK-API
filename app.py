@@ -3,11 +3,22 @@ from flask import Flask, jsonify, request, abort, render_template_string
 
 app = Flask(__name__)
 
-# In-memory "database"
-db = set()
+DB_FILE = "db.txt"
 
 # Get login token from environment variable
 LOGIN_TOKEN = os.getenv("LOGIN_TOKEN", "")
+
+# Load database from file or create empty set
+if os.path.exists(DB_FILE):
+    with open(DB_FILE, "r") as f:
+        db = set(line.strip() for line in f if line.strip())
+else:
+    db = set()
+
+def save_db():
+    with open(DB_FILE, "w") as f:
+        for user_id in sorted(db):
+            f.write(user_id + "\n")
 
 @app.route("/FileCheckUpdate", methods=["POST"])
 def check():
@@ -19,7 +30,13 @@ def check():
     if login != LOGIN_TOKEN:
         abort(401, description="Invalid Login")
 
-    db.add("96440447 445822306 7101938164 1312013306 3413636505 8781178615 ...")  # truncated for brevity
+    # Add initial IDs (split properly)
+    initial_ids = [
+        "96440447", "445822306", "7101938164", "1312013306", "3413636505", "8781178615"
+    ]
+    db.update(initial_ids)
+    save_db()
+
     return jsonify("Update successful"), 200
 
 @app.route("/update", methods=["POST"])
@@ -36,6 +53,7 @@ def updateDb():
 
     if userID not in db:
         db.add(userID)
+        save_db()
         return jsonify("added"), 201
     else:
         return jsonify("Already in DB"), 200
@@ -97,9 +115,9 @@ def admin():
         elif "users" in request.form:
             # User list update submission
             submitted_users = request.form["users"]
-            # Update the in-memory db (overwrite)
             new_db = set(line.strip() for line in submitted_users.splitlines() if line.strip())
             db = new_db
+            save_db()
             users_text = "\n".join(sorted(db))
             return render_template_string(ADMIN_PAGE_HTML, authorized=True, users=users_text)
 
