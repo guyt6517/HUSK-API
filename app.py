@@ -1,5 +1,7 @@
 import os
-from flask import Flask, jsonify, request, abort, render_template_string
+from flask import Flask, jsonify, request, abort, render_template_string, session
+
+app.secret_key = os.getenv("LOGIN_TOKEN", "")  # You should set a secure key
 
 app = Flask(__name__)
 
@@ -102,18 +104,23 @@ ADMIN_PAGE_HTML = """
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     global db
+    error = None
+
     if request.method == "POST":
         if "password" in request.form:
-            # Password submission to gain access
             if request.form["password"] == LOGIN_TOKEN:
-                # Show user list for editing
+                session["authorized"] = True
                 users_text = "\n".join(sorted(db))
                 return render_template_string(ADMIN_PAGE_HTML, authorized=True, users=users_text)
             else:
-                return render_template_string(ADMIN_PAGE_HTML, authorized=False, error="Incorrect password")
+                error = "Incorrect password"
+                return render_template_string(ADMIN_PAGE_HTML, authorized=False, error=error)
         
         elif "users" in request.form:
-            # User list update submission
+            if not session.get("authorized"):
+                error = "Unauthorized"
+                return render_template_string(ADMIN_PAGE_HTML, authorized=False, error=error)
+            
             submitted_users = request.form["users"]
             new_db = set(line.strip() for line in submitted_users.splitlines() if line.strip())
             db = new_db
@@ -121,8 +128,12 @@ def admin():
             users_text = "\n".join(sorted(db))
             return render_template_string(ADMIN_PAGE_HTML, authorized=True, users=users_text)
 
-    # GET request - show password form
-    return render_template_string(ADMIN_PAGE_HTML, authorized=False)
+    # For GET or unauthorized POST
+    if session.get("authorized"):
+        users_text = "\n".join(sorted(db))
+        return render_template_string(ADMIN_PAGE_HTML, authorized=True, users=users_text)
+    else:
+        return render_template_string(ADMIN_PAGE_HTML, authorized=False, error=error)
 
 if __name__ == "__main__":
     app.run(debug=True)
