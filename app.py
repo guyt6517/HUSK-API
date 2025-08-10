@@ -2,15 +2,16 @@ import os
 from flask import Flask, jsonify, request, abort, render_template_string, session
 import random
 
-
 app = Flask(__name__)
 
 DB_FILE = "db.txt"
 
-app.secret_key = random.randint(1,100)  # You should set a secure key
+LOGIN_TOKEN = os.getenv("LOGIN_TOKEN")
 
-# Get login token from environment variable
-LOGIN_TOKEN = os.getenv("LOGIN_TOKEN", "")
+# Fallback secret key for sessions if LOGIN_TOKEN is not set or empty
+app.secret_key = LOGIN_TOKEN 
+if not app.secret_key or app.secret_key == "":
+    app.secret_key = random.randint(1,10000)
 
 # Load database from file or create empty set
 if os.path.exists(DB_FILE):
@@ -20,6 +21,7 @@ else:
     db = set()
 
 def save_db():
+    print(f"[DEBUG] Saving DB with {len(db)} users")
     with open(DB_FILE, "w") as f:
         for user_id in sorted(db):
             f.write(user_id + "\n")
@@ -124,6 +126,7 @@ def admin():
                 return render_template_string(ADMIN_PAGE_HTML, authorized=False, error=error)
             
             submitted_users = request.form["users"]
+            print(f"[DEBUG] Received updated users:\n{submitted_users}")
             new_db = set(line.strip() for line in submitted_users.splitlines() if line.strip())
             db = new_db
             save_db()
